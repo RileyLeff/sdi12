@@ -1,7 +1,33 @@
 // src/common/hal_traits.rs
+use core::time::Duration; // Add Duration
+use core::fmt::Debug; // Already there
 
+// Define an opaque Instant marker trait within our library
+// This avoids depending directly on embedded_hal::timer::Instant in the core trait
+pub trait Sdi12Instant: Sized + Copy + Debug + Ord + core::ops::Add<Duration, Output = Self> + core::ops::Sub<Self, Output = Duration> {}
+
+// Blanket implementation for any type that satisfies the bounds
+impl<T> Sdi12Instant for T where T: Sized + Copy + Debug + Ord + core::ops::Add<Duration, Output = Self> + core::ops::Sub<Self, Output = Duration> {}
+
+
+/// Abstraction for timer/delay operations required by SDI-12.
+pub trait Sdi12Timer {
+    /// Associated type for representing a moment in time.
+    /// Must implement necessary traits for comparison and duration arithmetic.
+    type Instant: Sdi12Instant; // Use our marker trait
+
+    /// Delay for at least the specified number of microseconds.
+    fn delay_us(&mut self, us: u32);
+
+    /// Delay for at least the specified number of milliseconds.
+    fn delay_ms(&mut self, ms: u32);
+
+    /// Returns the current time as an `Instant`.
+    fn now(&self) -> Self::Instant;
+}
+
+// ... (rest of hal_traits.rs remains the same)
 use super::frame::FrameFormat;
-use core::fmt::Debug;
 
 // We need these traits potentially for the NativeSdi12Uart bounds
 #[cfg(feature = "impl-native")]
@@ -9,17 +35,6 @@ use embedded_hal; // Use version 1.0
 #[cfg(all(feature = "async", feature = "impl-native"))]
 use embedded_hal_async; // Use version 1.0
 
-/// Abstraction for timer/delay operations required by SDI-12.
-///
-/// Note: This could potentially be replaced by directly requiring
-/// `embedded_hal::delay::DelayNs` if embedded-hal v1 is mandated.
-pub trait Sdi12Timer {
-    /// Delay for at least the specified number of microseconds.
-    fn delay_us(&mut self, us: u32);
-
-    /// Delay for at least the specified number of milliseconds.
-    fn delay_ms(&mut self, ms: u32);
-}
 
 /// Abstraction for synchronous (non-blocking) SDI-12 serial communication.
 pub trait Sdi12Serial {

@@ -149,17 +149,14 @@ pub enum Command {
     // ExtendedCommandFixed { address: Sdi12Addr, command_body: ArrayString<{MAX_EXT_LEN?}> }, // Fixed type here too
 }
 
-
 impl Command {
     /// Maximum length of the *formatted* standard command string (e.g., "aICC9_999!").
-    /// Calculated as: address(1) + ICC(3) + index(1) + underscore(1) + param(3) + !(1) = 10
     const MAX_FORMATTED_LEN: usize = 10;
 
-    /// Formats the command into the standard byte sequence (e.g., "0M!", "1D10!") including the '!'.
-    /// Writes into a fixed-size buffer (ArrayString) to avoid allocation.
-    /// Extended commands require the 'alloc' feature.
-    pub fn format_into(&self) -> Result<ArrayString<{Self::MAX_FORMATTED_LEN}>, CommandFormatError> { // Re-added braces
-        let mut buffer = ArrayString::<{Self::MAX_FORMATTED_LEN}>::new(); // Re-added braces
+    /// Formats the command into the standard byte sequence.
+    pub fn format_into(&self) -> Result<ArrayString<{Self::MAX_FORMATTED_LEN}>, CommandFormatError> {
+        // ... (rest of format_into implementation as before) ...
+        let mut buffer = ArrayString::<{Self::MAX_FORMATTED_LEN}>::new();
 
         match self {
             Command::AcknowledgeActive { address } => write!(buffer, "{}!", address)?,
@@ -228,55 +225,111 @@ impl Command {
                 write!(buffer, "{}", address)?;
 
                 // Check if there's enough space for the command body AND the trailing '!'
-                // Use +1 for the '!' character.
                 if buffer.remaining_capacity() < command_body.len() + 1 {
                     return Err(CommandFormatError::BufferOverflow);
                 }
 
-                // Write the command body (now safe capacity-wise)
-                // Use try_push_str as it returns Result and works with ArrayString's capacity checks
+                // Write the command body
                 buffer.try_push_str(command_body)
-                      .map_err(|_| CommandFormatError::BufferOverflow)?; // Should not fail if capacity check is right
+                      .map_err(|_| CommandFormatError::BufferOverflow)?;
 
-                // Write the terminator (now safe capacity-wise)
+                // Write the terminator
                 buffer.try_push('!')
-                      .map_err(|_| CommandFormatError::BufferOverflow)?; // Should not fail
+                      .map_err(|_| CommandFormatError::BufferOverflow)?;
              }
-
         }
         Ok(buffer)
     }
-}
 
+    /// Returns the address the command is directed to.
+    // **** THIS METHOD WAS MISSING - RE-ADDING IT ****
+    pub fn address(&self) -> Sdi12Addr {
+        match self {
+            Command::AcknowledgeActive { address } => *address,
+            Command::SendIdentification { address } => *address,
+            Command::AddressQuery => Sdi12Addr::QUERY_ADDRESS, // Or panic? Query doesn't have a single target. Returning '?' seems least bad.
+            Command::ChangeAddress { address, .. } => *address,
+            Command::StartMeasurement { address, .. } => *address,
+            Command::StartMeasurementCRC { address, .. } => *address,
+            Command::StartConcurrentMeasurement { address, .. } => *address,
+            Command::StartConcurrentMeasurementCRC { address, .. } => *address,
+            Command::SendData { address, .. } => *address,
+            Command::SendBinaryData { address, .. } => *address,
+            Command::ReadContinuous { address, .. } => *address,
+            Command::ReadContinuousCRC { address, .. } => *address,
+            Command::StartVerification { address } => *address,
+            Command::StartHighVolumeASCII { address } => *address,
+            Command::StartHighVolumeBinary { address } => *address,
+            Command::IdentifyMeasurement(cmd) => cmd.address(), // Delegate
+            Command::IdentifyMeasurementParameter(cmd) => cmd.address(), // Delegate
+            #[cfg(feature = "alloc")]
+            Command::ExtendedCommand { address, .. } => *address,
+        }
+    }
+}
 
 // --- Metadata Sub-Enums ---
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IdentifyMeasurementCommand {
-    Measurement { address: Sdi12Addr, index: MeasurementIndex },
-    MeasurementCRC { address: Sdi12Addr, index: MeasurementIndex },
-    Verification { address: Sdi12Addr },
-    ConcurrentMeasurement { address: Sdi12Addr, index: MeasurementIndex },
-    ConcurrentMeasurementCRC { address: Sdi12Addr, index: MeasurementIndex },
-    HighVolumeASCII { address: Sdi12Addr },
-    HighVolumeBinary { address: Sdi12Addr },
+     Measurement { address: Sdi12Addr, index: MeasurementIndex },
+     MeasurementCRC { address: Sdi12Addr, index: MeasurementIndex },
+     Verification { address: Sdi12Addr },
+     ConcurrentMeasurement { address: Sdi12Addr, index: MeasurementIndex },
+     ConcurrentMeasurementCRC { address: Sdi12Addr, index: MeasurementIndex },
+     HighVolumeASCII { address: Sdi12Addr },
+     HighVolumeBinary { address: Sdi12Addr },
 }
+
+// Add address() helper for IdentifyMeasurementCommand
+impl IdentifyMeasurementCommand {
+     pub fn address(&self) -> Sdi12Addr {
+         match self {
+             Self::Measurement { address, .. } => *address,
+             Self::MeasurementCRC { address, .. } => *address,
+             Self::Verification { address } => *address,
+             Self::ConcurrentMeasurement { address, .. } => *address,
+             Self::ConcurrentMeasurementCRC { address, .. } => *address,
+             Self::HighVolumeASCII { address } => *address,
+             Self::HighVolumeBinary { address } => *address,
+         }
+     }
+}
+
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IdentifyMeasurementParameterCommand {
-    Measurement { address: Sdi12Addr, m_index: MeasurementIndex, param_index: IdentifyParameterIndex },
-    MeasurementCRC { address: Sdi12Addr, m_index: MeasurementIndex, param_index: IdentifyParameterIndex },
-    Verification { address: Sdi12Addr, param_index: IdentifyParameterIndex },
-    ConcurrentMeasurement { address: Sdi12Addr, c_index: MeasurementIndex, param_index: IdentifyParameterIndex },
-    ConcurrentMeasurementCRC { address: Sdi12Addr, c_index: MeasurementIndex, param_index: IdentifyParameterIndex },
-    ReadContinuous { address: Sdi12Addr, r_index: ContinuousIndex, param_index: IdentifyParameterIndex },
-    ReadContinuousCRC { address: Sdi12Addr, r_index: ContinuousIndex, param_index: IdentifyParameterIndex },
-    HighVolumeASCII { address: Sdi12Addr, param_index: IdentifyParameterIndex },
-    HighVolumeBinary { address: Sdi12Addr, param_index: IdentifyParameterIndex },
+     Measurement { address: Sdi12Addr, m_index: MeasurementIndex, param_index: IdentifyParameterIndex },
+     MeasurementCRC { address: Sdi12Addr, m_index: MeasurementIndex, param_index: IdentifyParameterIndex },
+     Verification { address: Sdi12Addr, param_index: IdentifyParameterIndex },
+     ConcurrentMeasurement { address: Sdi12Addr, c_index: MeasurementIndex, param_index: IdentifyParameterIndex },
+     ConcurrentMeasurementCRC { address: Sdi12Addr, c_index: MeasurementIndex, param_index: IdentifyParameterIndex },
+     ReadContinuous { address: Sdi12Addr, r_index: ContinuousIndex, param_index: IdentifyParameterIndex },
+     ReadContinuousCRC { address: Sdi12Addr, r_index: ContinuousIndex, param_index: IdentifyParameterIndex },
+     HighVolumeASCII { address: Sdi12Addr, param_index: IdentifyParameterIndex },
+     HighVolumeBinary { address: Sdi12Addr, param_index: IdentifyParameterIndex },
+}
+
+// Add address() helper for IdentifyMeasurementParameterCommand
+impl IdentifyMeasurementParameterCommand {
+     pub fn address(&self) -> Sdi12Addr {
+         match self {
+             Self::Measurement { address, .. } => *address,
+             Self::MeasurementCRC { address, .. } => *address,
+             Self::Verification { address, .. } => *address,
+             Self::ConcurrentMeasurement { address, .. } => *address,
+             Self::ConcurrentMeasurementCRC { address, .. } => *address,
+             Self::ReadContinuous { address, .. } => *address,
+             Self::ReadContinuousCRC { address, .. } => *address,
+             Self::HighVolumeASCII { address, .. } => *address,
+             Self::HighVolumeBinary { address, .. } => *address,
+         }
+     }
 }
 
 
 // --- Unit Tests ---
+// ... (tests remain the same) ...
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -387,29 +440,35 @@ mod tests {
     #[test]
     #[cfg(feature = "alloc")]
     fn test_format_extended_command() {
-        // Test successful formatting within capacity
-        let cmd_short = Command::ExtendedCommand { address: addr('X'), command_body: "YZ".to_string() }; // Note: body does NOT include '!' here
+        let cmd_short = Command::ExtendedCommand { address: addr('X'), command_body: "YZ".to_string() };
         let expected_short = "XYZ!";
         let formatted_short = cmd_short.format_into().unwrap();
         assert_eq!(formatted_short.as_str(), expected_short);
 
-        // Test exact capacity fill
-        let cmd_exact = Command::ExtendedCommand { address: addr('A'), command_body: "BCDEFGHI".to_string() }; // 1 + 8 + 1 = 10 chars
+        let cmd_exact = Command::ExtendedCommand { address: addr('A'), command_body: "BCDEFGHI".to_string() };
         let formatted_exact = cmd_exact.format_into().unwrap();
         assert_eq!(formatted_exact.as_str(), "ABCDEFGHI!");
 
-        // Test overflow
-        let cmd_long = Command::ExtendedCommand { address: addr('A'), command_body: "BCDEFGHIJ".to_string() }; // 1 + 9 + 1 = 11 chars
+        let cmd_long = Command::ExtendedCommand { address: addr('A'), command_body: "BCDEFGHIJ".to_string() };
         let formatted_long_result = cmd_long.format_into();
         assert!(matches!(formatted_long_result, Err(CommandFormatError::BufferOverflow)));
     }
 
     #[test]
     fn test_format_error_from_fmt() {
-        // This test is a bit artificial, as ArrayString formatting itself rarely fails with FmtError
-        // unless the Display impl of a component fails, but we can check the From impl.
         let fmt_err = core::fmt::Error;
         let cmd_fmt_err: CommandFormatError = fmt_err.into();
         assert_eq!(cmd_fmt_err, CommandFormatError::FmtError);
+    }
+
+    // **** ADDED TEST FOR Command::address() ****
+    #[test]
+    fn test_command_address_method() {
+        assert_eq!(Command::AcknowledgeActive{ address: addr('0') }.address(), addr('0'));
+        assert_eq!(Command::StartMeasurement{ address: addr('1'), index: MeasurementIndex::Base }.address(), addr('1'));
+        assert_eq!(Command::IdentifyMeasurement(IdentifyMeasurementCommand::Verification{ address: addr('A') }).address(), addr('A'));
+        assert_eq!(Command::IdentifyMeasurementParameter(IdentifyMeasurementParameterCommand::Verification{ address: addr('B'), param_index: IdentifyParameterIndex::new(1).unwrap() }).address(), addr('B'));
+        // Test address query returns the query address char
+        assert_eq!(Command::AddressQuery.address(), Sdi12Addr::QUERY_ADDRESS);
     }
 }

@@ -106,21 +106,21 @@ The library uses the standard Rust crate structure (`src/lib.rs`) with the follo
 *   **`recorder::SyncRecorder` Public Methods:** Implement the main action methods (`identify`, `change_address`, `start_measurement`, `send_data`, etc.) using `execute_transaction`. Define appropriate return types (e.g., `Result<MeasurementTiming, _>`, `Result<PayloadSlice, _>`, `Result<Sdi12Addr, _>`).
 *   **`sensor::SensorHandler` Trait:** Finalize the trait definition based on the chosen philosophy (action-methods, specific return types like `MeasurementStartResult`).
 *   **`sensor::SyncSensor`:** Implement the sensor runner struct and its `listen_and_respond` logic (parsing commands, calling handler methods, formatting responses based on handler results, managing protocol state).
-*   **Adapters (Minimal):** Implement at least the `NativeAdapter` (`implementations/native.rs`) to allow usage with HALs where the user implements `NativeSdi12Uart`. Consider a basic `GenericHalAdapter` foundation.
-*   **Basic Examples:** Create simple examples demonstrating recorder and sensor usage (e.g., a loopback test).
+* **Adapters (Minimal):** Implement at least the `NativeAdapter` (`implementations/native.rs`) to allow usage with HALs where the user implements `NativeSdi12Uart`. Consider a basic `GenericHalAdapter` foundation.
+* **Basic Examples:** Create simple examples demonstrating recorder and sensor usage (e.g., a loopback test).
 
 ## 8. Future Directions & Improvements
 
-*   **Async Implementation:** Fully implement `AsyncRecorder`, `AsyncSensor`, and async adapters (`Sdi12SerialAsync`, etc.).
-*   **`heapless` Support:** Add a `heapless` feature flag. Provide alternative `no_alloc` structs using `heapless::String`/`Vec`. Provide `heapless`-based parsing helpers.
-*   **Parsing Helpers:** Implement the optional `alloc`/`heapless` helper functions for parsing common payload types (`IdentificationInfo`, `DataInfo`, `MetadataInfo`, etc.) from `PayloadSlice`.
-*   **Sensor Handler Macro:** Implement the `handler_macro!` to simplify defining `SensorHandler` implementations.
-*   **More Adapters:** Provide more feature-gated adapter implementations for popular `embedded-hal` families (STM32, RP2040, ESP-HAL, etc.), potentially including native break/config optimizations where possible. Implement `std` adapters (using `serialport`, `tokio-serial`).
-*   **Documentation:** Add comprehensive documentation (`#![forbid(missing_docs)]`), including usage examples for different platforms and configurations.
-*   **Examples:** Create more extensive examples for real-world scenarios (Embassy, RTIC, `std`).
-*   **Timeout Configuration:** Allow users to configure timeout durations.
-*   **Performance Optimization:** Profile and optimize critical code paths.
-*   **Testing:** Add integration tests, tests on real hardware. Test race conditions in async code.
+* **Async Implementation:** Fully implement `AsyncRecorder`, `AsyncSensor`, and async adapters (`Sdi12SerialAsync`, etc.).
+* **`heapless` Support:** Add a `heapless` feature flag. Provide alternative `no_alloc` structs using `heapless::String`/`Vec`. Provide `heapless`-based parsing helpers.
+* **Parsing Helpers:** Implement the optional `alloc`/`heapless` helper functions for parsing common payload types (`IdentificationInfo`, `DataInfo`, `MetadataInfo`, etc.) from `PayloadSlice`.
+* **Sensor Handler Macro:** Implement the `handler_macro!` to simplify defining `SensorHandler` implementations.
+* **More Adapters:** Provide more feature-gated adapter implementations for popular `embedded-hal` families (STM32, RP2040, ESP-HAL, etc.), potentially including native break/config optimizations where possible. Implement `std` adapters (using `serialport`, `tokio-serial`).
+* **Documentation:** Add comprehensive documentation (`#![forbid(missing_docs)]`), including usage examples for different platforms and configurations.
+* **Examples:** Create more extensive examples for real-world scenarios (Embassy, RTIC, `std`).
+* **Timeout Configuration:** Allow users to configure timeout durations.
+* **Performance Optimization:** Profile and optimize critical code paths.
+* **Testing:** Add integration tests, tests on real hardware. Test race conditions in async code.
 
 ## 9. Conclusion
 
