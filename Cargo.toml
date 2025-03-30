@@ -12,25 +12,37 @@ categories = ["embedded", "hardware-support", "no-std"]
 [dependencies]
 crc = { version = "3.2.1", default-features = false }
 nb = "1.1.0"
-# thiserror is now a mandatory dependency
-# default-features = false ensures its 'std' feature is off by default
-thiserror = { version = ">1.0", default-features = false }
 
-# Add heapless later if needed for no-std collections
-# heapless = { version = "0.8", optional = true }
+# arrayvec is needed for command formatting, make it non-optional
+arrayvec = { version = "0.7.6", default-features = false } # Use 0.7.x, ensure no_std
+
+# Heapless is optional for main library, maybe used for alloc alternatives
+heapless = { version = "0.8", optional = true } # Make optional
 
 # For embedded-hal support later
 embedded-hal = { version = "1.0.0", optional = true }
 embedded-hal-async = { version = "1.0.0", optional = true }
-arrayvec = "0.7.6"
-heapless = "0.8.0"
+thiserror = { version = "2.0.12", default-features = false }
+
+
+[dev-dependencies]
+# Heapless is needed for tests that check formatting errors
+heapless = { version = "0.8" }
+
 
 [features]
 default = [] # no_std by default
 
 # Core features
+# Decide if 'alloc' enables 'heapless' use cases within the library, or if they are separate.
+# Option 1: alloc enables alloc crate directly
 alloc = []
-std = ["alloc", "thiserror/std"]
+# Option 2: Feature to specifically enable heapless-based alternatives
+use_heapless = ["dep:heapless"]
+# Option 3: alloc feature also enables heapless (simpler if heapless is the primary no_std collection)
+# alloc = ["dep:heapless"]
+
+std = ["alloc", "thiserror/std"] # std usually implies alloc
 async = ["dep:embedded-hal-async"] # async requires embedded-hal-async
 
 # Implementation Strategy Features (choose one or more when using the library)

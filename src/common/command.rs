@@ -182,10 +182,10 @@ impl Command {
 
     // Helper to create extended commands (example)
     // You might want more specific constructors for known extended commands.
-    pub fn new_extended(
+    pub fn new_extended<E: core::fmt::Debug>(
         address: Sdi12Addr,
         payload_str: &str,
-    ) -> Result<Self, Sdi12Error> {
+    ) -> Result<Self, Sdi12Error<E>> {
         if !payload_str.ends_with('!') {
             return Err(Sdi12Error::CommandFormat("Extended command payload must end with '!'"));
         }
@@ -272,10 +272,10 @@ mod tests {
         );
 
         // Test extended command formatting
-        let ext_cmd = Command::new_extended(addr('0'), "XTEST!").unwrap();
+        let ext_cmd = Command::new_extended::<()>(addr('0'), "XTEST!").unwrap();
          assert_eq!(ext_cmd.to_string(), "0XTEST!");
 
-        let ext_cmd_long = Command::new_extended(addr('Z'), "LONGPAYLOAD1234!").unwrap();
+        let ext_cmd_long = Command::new_extended::<()>(addr('Z'), "LONGPAYLOAD1234!").unwrap();
         assert_eq!(ext_cmd_long.to_string(), "ZLONGPAYLOAD1234!");
     }
 
@@ -321,23 +321,10 @@ mod tests {
 
      #[test]
      fn test_extended_command_creation_errors() {
-         // Use a simple MockError for the Result type in new_extended if necessary
-         // Or adjust Sdi12Error if it has a specific CommandFormat variant
-         #[derive(Debug, PartialEq)]
-         enum MockError { CommandFormat(&'static str) }
-         impl From<MockError> for Sdi12Error<MockError> { // Assuming Sdi12Error<E>
-             fn from(e: MockError) -> Self {
-                 match e {
-                     MockError::CommandFormat(s) => Sdi12Error::CommandFormat(s) // Adjust variant if name differs
-                 }
-             }
-         }
-
-         // Assuming new_extended returns Result<Self, Sdi12Error<some_error_type>>
-         assert!(Command::new_extended(addr('0'), "XTEST").is_err()); // Missing !
-         assert!(Command::new_extended(addr('0'), "THISPAYLOADISWAYTOOLONGFORARRAY!").is_err()); // Too long
+         // Test with CommandFormat variant instead of MockError
+         assert!(Command::new_extended::<()>(addr('0'), "XTEST").is_err()); // Missing !
+         assert!(Command::new_extended::<()>(addr('0'), "THISPAYLOADISWAYTOOLONGFORARRAY!").is_err()); // Too long
      }
-
     #[test]
     fn test_address_retrieval() {
         assert_eq!(Command::AcknowledgeActive { address: addr('0') }.address(), addr('0'));
@@ -348,7 +335,7 @@ mod tests {
         assert_eq!(Command::SendData { address: addr('6'), data_index: 0 }.address(), addr('6'));
         assert_eq!(Command::ContinuousMeasurement { address: addr('7'), measurement_index: 9 }.address(), addr('7'));
         assert_eq!(Command::IdentifySensor { address: addr('8') }.address(), addr('8'));
-        let ext_cmd = Command::new_extended(addr('9'), "XCMD!").unwrap();
+        let ext_cmd = Command::new_extended::<()>(addr('9'), "XCMD!").unwrap();
         assert_eq!(ext_cmd.address(), addr('9'));
     }
 
@@ -363,7 +350,7 @@ mod tests {
         // Continuous measurements expect an ack+timing initially
         assert!(Command::ContinuousMeasurement { address: addr('7'), measurement_index: 9 }.requires_response());
         assert!(Command::IdentifySensor { address: addr('8') }.requires_response());
-        let ext_cmd = Command::new_extended(addr('9'), "XCMD!").unwrap();
+        let ext_cmd = Command::new_extended::<()>(addr('9'), "XCMD!").unwrap();
         assert!(ext_cmd.requires_response()); // Assume true for extended
     }
 }
