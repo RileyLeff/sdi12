@@ -4,6 +4,10 @@ use super::address::Sdi12Addr;
 use core::convert::TryFrom;
 use core::fmt;
 
+// Conditionally import alloc::string::String
+#[cfg(feature = "alloc")]
+use alloc::string::String;
+
 // --- Error Type for Index Validation ---
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -2,6 +2,9 @@
 
 #![no_std] // Specify no_std at the crate root
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 pub mod common;
 pub mod recorder;
 pub mod sensor;

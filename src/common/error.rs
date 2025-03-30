@@ -1,5 +1,8 @@
 // src/common/error.rs
 
+#[cfg(feature = "alloc")]
+use alloc::string::String;
+
 // No more cfg_attr needed here, thiserror is always available
 #[derive(Debug, thiserror::Error)]
 pub enum Sdi12Error<E = ()>
