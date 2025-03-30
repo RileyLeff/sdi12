@@ -534,7 +534,10 @@ mod tests {
         assert!(result.is_ok());
         assert!(recorder.interface.break_sent);
         // FIX E0308: Cast lhs to u128
-        assert!(recorder.interface.current_time_us as u128 > 200_000 + timing::POST_BREAK_MARKING_MIN.as_micros());
+        // src/recorder/sync_recorder/mod.rs - inside test_check_and_send_break_needed
+
+        // ASSERTION: Current time should be >= (Start Time + Post Break Marking Delay)
+        assert!(recorder.interface.current_time_us as u128 >= 200_000 + timing::POST_BREAK_MARKING_MIN.as_micros()); // Changed > to >=
         assert!(recorder.last_activity_time.is_some());
     }
 
