@@ -7,7 +7,7 @@ pub mod crc;
 pub mod error;
 pub mod frame;
 pub mod hal_traits;
-pub mod response; // The new sub-module
+pub mod response; // Points to the single file
 pub mod timing;
 pub mod types;
 
@@ -18,7 +18,8 @@ pub use address::Sdi12Addr;
 
 // From command.rs
 pub use command::{
-    Command, CommandIndexError, MeasurementIndex, ContinuousIndex, DataIndex, IdentifyParameterIndex,
+    Command, CommandIndexError, CommandFormatError, // Added FormatError
+    MeasurementIndex, ContinuousIndex, DataIndex, IdentifyParameterIndex,
     IdentifyMeasurementCommand, IdentifyMeasurementParameterCommand,
 };
 
@@ -44,10 +45,7 @@ pub use response::{
     PayloadSlice,       // The wrapper for returned raw payloads
 };
 
-
-// From timing.rs (constants - users can access via common::timing::*)
-// No re-exports by default unless specifically desired, e.g.:
-// pub use timing::BREAK_DURATION_MIN;
+// From timing.rs (constants)
 
 // From types.rs
 pub use types::{BinaryDataType, Sdi12ParsingError, Sdi12Value};
@@ -64,3 +62,7 @@ pub use hal_traits::Sdi12SerialAsync;
 pub use hal_traits::NativeSdi12Uart;
 #[cfg(all(feature = "async", feature = "impl-native"))]
 pub use hal_traits::NativeSdi12UartAsync;
+
+// Note: No alloc-dependent response types re-exported from common::response
+// Types like IdentificationInfo, DataInfo etc. are now internal details
+// potentially used by optional parsing helpers.
