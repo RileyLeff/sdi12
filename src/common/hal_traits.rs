@@ -3,6 +3,12 @@
 use super::frame::FrameFormat;
 use core::fmt::Debug;
 
+// We need these traits potentially for the NativeSdi12Uart bounds
+#[cfg(feature = "impl-native")]
+use embedded_hal; // Use version 1.0
+#[cfg(all(feature = "async", feature = "impl-native"))]
+use embedded_hal_async; // Use version 1.0
+
 /// Abstraction for timer/delay operations required by SDI-12.
 ///
 /// Note: This could potentially be replaced by directly requiring
@@ -18,6 +24,7 @@ pub trait Sdi12Timer {
 /// Abstraction for synchronous (non-blocking) SDI-12 serial communication.
 pub trait Sdi12Serial {
     /// Associated error type for communication errors.
+    /// Must implement Debug for error reporting.
     type Error: Debug;
 
     /// Attempts to read a single byte from the serial interface.
@@ -41,8 +48,7 @@ pub trait Sdi12Serial {
     /// Sends the SDI-12 break condition (>= 12ms of spacing).
     ///
     /// Implementations must ensure the line is held low for the required duration.
-    /// This might block or return `WouldBlock` depending on the implementation strategy
-    /// (e.g., if using a timer in a non-blocking way). For simplicity here, we use nb::Result.
+    /// This might block or return `WouldBlock` depending on the implementation strategy.
     fn send_break(&mut self) -> nb::Result<(), Self::Error>;
 
     /// Changes the serial configuration (e.g., between 7E1 and 8N1).
@@ -56,6 +62,7 @@ pub trait Sdi12Serial {
 #[cfg(feature = "async")]
 pub trait Sdi12SerialAsync {
     /// Associated error type for communication errors.
+    /// Must implement Debug for error reporting.
     type Error: Debug;
 
     /// Asynchronously reads a single byte from the serial interface.
@@ -81,15 +88,18 @@ pub trait Sdi12SerialAsync {
 /// for sending break signals and changing configuration efficiently. Then, use the
 /// `NativeAdapter` to make it compatible with `sdi12-rs`.
 ///
-/// Requires `embedded-hal` v1.0 traits.
-#[cfg(feature = "impl-native")] // Assuming impl-native enables this trait definition and adapter
+/// Requires `embedded-hal` v1.0 traits and is enabled by the `impl-native` feature.
+#[cfg(feature = "impl-native")]
 pub trait NativeSdi12Uart:
-    embedded_hal::serial::ErrorType // Require the ErrorType trait from embedded-hal
-    + embedded_hal::serial::Read<u8> // Use embedded-hal Read trait
-    + embedded_hal::serial::Write<u8> // Use embedded-hal Write trait
-    + embedded_hal::serial::Flush<u8> // Use embedded-hal Flush trait
+    embedded_hal::serial::ErrorType // Use fully qualified path
+    // Specify Error association for dependent traits using qualified syntax
+    + embedded_hal::serial::Read<u8, Error = <Self as embedded_hal::serial::ErrorType>::Error>
+    + embedded_hal::serial::Write<u8, Error = <Self as embedded_hal::serial::ErrorType>::Error>
+    + embedded_hal::serial::Flush<u8, Error = <Self as embedded_hal::serial::ErrorType>::Error>
+    // Add Debug bound on the associated Error type for our own trait requirements
+    + where <Self as embedded_hal::serial::ErrorType>::Error: Debug
 {
-    // Note: The Error associated type comes from embedded_hal::serial::ErrorType
+    // Note: The associated Error type comes from embedded_hal::serial::ErrorType
 
     /// Sends the SDI-12 break condition using native hardware capabilities.
     fn native_send_break(&mut self) -> Result<(), Self::Error>;
@@ -99,15 +109,18 @@ pub trait NativeSdi12Uart:
 }
 
 /// Async version of `NativeSdi12Uart`.
-/// Requires `embedded-hal-async` traits.
-#[cfg(all(feature = "async", feature = "impl-native"))] // Needs both async and native support
+/// Requires `embedded-hal-async` traits and is enabled by the `async` and `impl-native` features.
+#[cfg(all(feature = "async", feature = "impl-native"))]
 pub trait NativeSdi12UartAsync:
-    embedded_hal_async::serial::ErrorType
-    + embedded_hal_async::serial::Read<u8>
-    + embedded_hal_async::serial::Write<u8>
-    + embedded_hal_async::serial::Flush<u8>
+    embedded_hal_async::serial::ErrorType // Use fully qualified path
+    // Specify Error association for dependent traits using qualified syntax
+    + embedded_hal_async::serial::Read<u8, Error = <Self as embedded_hal_async::serial::ErrorType>::Error>
+    + embedded_hal_async::serial::Write<u8, Error = <Self as embedded_hal_async::serial::ErrorType>::Error>
+    + embedded_hal_async::serial::Flush<u8, Error = <Self as embedded_hal_async::serial::ErrorType>::Error>
+    // Add Debug bound on the associated Error type for our own trait requirements
+    + where <Self as embedded_hal_async::serial::ErrorType>::Error: Debug
 {
-    // Note: The Error associated type comes from embedded_hal_async::serial::ErrorType
+    // Note: The associated Error type comes from embedded_hal_async::serial::ErrorType
 
     /// Asynchronously sends the SDI-12 break condition using native hardware capabilities.
     async fn native_send_break(&mut self) -> Result<(), Self::Error>;

@@ -21,16 +21,16 @@ pub const POST_BREAK_MARKING_MIN: Duration = Duration::from_micros(8330);
 // === Command/Response Timing (Sec 7.0) ===
 
 /// Maximum time from end of command stop bit for recorder to release line.
-pub const RECORDER_RELEASE_TIME_MAX: Duration = Duration::from_micros(7500 + 400); // 7.5ms + 0.4ms tol
+pub const RECORDER_RELEASE_TIME_MAX: Duration = Duration::from_micros(7_900); // 7.5ms + 0.4ms tol
 /// Nominal marking time sent by sensor before starting response.
 pub const SENSOR_PRE_RESPONSE_MARKING: Duration = Duration::from_micros(8330);
 /// Maximum time from end of command stop bit to start bit of first response byte.
-pub const RESPONSE_START_TIME_MAX: Duration = Duration::from_millis(15) + Duration::from_micros(400); // 15ms + 0.4ms tol
+pub const RESPONSE_START_TIME_MAX: Duration = Duration::from_micros(15_400); // 15ms + 0.4ms tol
 /// Maximum time from end of response stop bit for sensor to release line.
-pub const SENSOR_RELEASE_TIME_MAX: Duration = Duration::from_micros(7500 + 400); // 7.5ms + 0.4ms tol
+pub const SENSOR_RELEASE_TIME_MAX: Duration = Duration::from_micros(7_900); // 7.5ms + 0.4ms tol
 /// Maximum marking time allowed between characters in a command or response.
-/// (Spec says 1.66 ms with *no* tolerance).
 pub const INTER_CHARACTER_MARKING_MAX: Duration = Duration::from_micros(1660);
+
 
 // === Sensor Wake/Sleep Timing (Sec 7.0) ===
 
