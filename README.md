@@ -6,14 +6,14 @@
 
 `sdi12-rs` aims to be a comprehensive, robust, and developer-friendly Rust library for interacting with the SDI-12 (Serial-Digital Interface at 1200 baud) protocol, commonly used for environmental sensors and dataloggers.
 
-The library targets embedded systems (`no_std` by default) but is designed to be usable in `std` environments as well. It provides first-class support for both implementing SDI-12 recorder (datalogger/master) functionality and implementing SDI-12 sensor (slave) firmware. The goal is to abstract the complexities of the SDI-12 protocol (timing, framing, commands, responses, CRC, state management) behind an idiomatic and safe Rust API.
+The library targets embedded systems (`no_std` by default) but is designed to be usable in `std` environments as well. It provides first-class support for both implementing SDI-12 recorder (e.g. datalogger, host) functionality and implementing SDI-12 sensor firmware. The goal is to abstract the complexities of the SDI-12 protocol (timing, framing, commands, responses, CRC, state management) behind an idiomatic and safe Rust API.
 
 This document outlines the library's goals, design philosophy, architecture, key decisions, current status, and future directions.
 
 ## 2. Goals & Requirements
 
 *   **Standard Compliance:** Implement the **SDI-12 Standard Version 1.4** (Feb 20, 2023), including all basic, concurrent, high-volume (ASCII & Binary), and metadata commands/responses.
-*   **Target Audience:** Support developers building both **Recorders (Masters)** and **Sensors (Slaves)**.
+*   **Target Audience:** Support developers building both **Recorders** and **Sensors**.
 *   **Environment:** Be `#[no_std]` compatible by default. Provide optional, feature-gated support for `std` and `alloc`.
 *   **Concurrency Models:** Offer first-class support for both **synchronous** and **asynchronous** operation patterns.
 *   **Hardware Abstraction:** Integrate cleanly with the embedded Rust ecosystem, primarily via `embedded-hal` (v1.0+) traits or custom traits, remaining hardware-agnostic at its core.
@@ -49,14 +49,14 @@ The library uses the standard Rust crate structure (`src/lib.rs`) with the follo
     *   `response.rs`: Defines `ResponseParseError`, `MeasurementTiming`, and `PayloadSlice`. Reflects the "Middle Ground" parsing approach.
     *   `timing.rs`: `const Duration` values for specified protocol timings.
     *   `types.rs`: `Sdi12Value` parsing/representation, `BinaryDataType` enum, `Sdi12ParsingError`.
-*   **`recorder/`**: Contains logic for the Recorder (Master/Datalogger) role.
+*   **`recorder/`**: Contains logic for the Recorder (Datalogger) role.
     *   `mod.rs`: Declares `sync_recorder` submodule and re-exports `SyncRecorder`. Placeholder for `AsyncRecorder`.
     *   **`sync_recorder/`**: Implementation for synchronous recorder.
         *   `mod.rs`: Defines `SyncRecorder` struct, `new()` constructor, and public API methods (`acknowledge`, `send_command`).
         *   `io_helpers.rs`: Contains `execute_blocking_io_with_timeout`, `check_and_send_break`, `send_command_bytes`, `read_response_line`.
         *   `protocol_helpers.rs`: Contains `process_response_payload` (checks address, CRC, returns indices).
         *   `transaction.rs`: Contains the core `execute_transaction` logic (handles break, send, read, process, basic retries, returns indices).
-*   **`sensor/`**: Contains logic and traits for the Sensor (Slave) role. (Not yet implemented).
+*   **`sensor/`**: Contains logic and traits for the Sensor role. (Not yet implemented).
 *   **`implementations/` (Directory)**: (Not yet implemented) Intended for optional, feature-gated HAL adapters.
 
 ## 5. Key Design Decisions & Rationale
