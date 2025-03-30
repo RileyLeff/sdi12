@@ -6,6 +6,7 @@ pub mod crc;
 pub mod error;
 pub mod frame; // Add this
 pub mod hal_traits; // Add this
+pub mod response;
 pub mod timing; // Add this line
 pub mod types; // Add this
 // Add other mods later: command, response, types, hal_traits
@@ -30,6 +31,16 @@ pub use hal_traits::NativeSdi12Uart;
 pub use hal_traits::NativeSdi12UartAsync;
 // Re-export timing constants if desired, or access via common::timing::*
 // Example: pub use timing::BREAK_DURATION_MIN;
+
+pub use response::{
+    Response, ResponseParseError, MeasurementTiming,
+    // Add parse_response, parse_binary_packet if they become pub
+};
+
+#[cfg(feature = "alloc")]
+pub use response::{
+    IdentificationInfo, DataInfo, BinaryDataInfo, MetadataInfo,
+};
 pub use types::{BinaryDataType, Sdi12ParsingError, Sdi12Value}; // Add types re-exports
 #[cfg(feature = "async")]
 pub use hal_traits::Sdi12SerialAsync;
