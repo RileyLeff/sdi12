@@ -4,7 +4,7 @@
 use alloc::string::String;
 
 // Import the specific command error types
-use crate::common::command::{CommandFormatError, CommandIndexError}; // Added this line
+use crate::common::command::{CommandFormatError, CommandIndexError};
 
 // No more cfg_attr needed here, thiserror is always available
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
@@ -57,11 +57,11 @@ where
     BusContention,
 
     /// Error related to command index validation.
-    #[error("Invalid command index: {0}")] // Changed from CommandFormat
+    #[error("Invalid command index: {0}")] // Uses Display impl of CommandIndexError
     InvalidCommandIndex(CommandIndexError), // Wrap CommandIndexError
 
     /// Error during command formatting.
-    #[error("Command formatting failed: {0}")] // Changed from CommandFormat
+    #[error("Command formatting failed: {0}")] // Uses Display impl of CommandFormatError
     CommandFormatFailed(CommandFormatError), // Wrap CommandFormatError
 
     /// An error specific to the sensor's implementation/handler.
@@ -73,9 +73,6 @@ where
     // Add other variants as needed...
 }
 
-// No manual Display impl needed - thiserror handles it.
-// No manual std::error::Error impl needed - thiserror handles it when its 'std' feature is enabled.
-
 // Allow mapping from underlying HAL error if From is implemented
 impl<E: core::fmt::Debug> From<E> for Sdi12Error<E> {
     fn from(e: E) -> Self {
@@ -83,15 +80,17 @@ impl<E: core::fmt::Debug> From<E> for Sdi12Error<E> {
     }
 }
 
-// Map command index errors into the main error type
-impl<E: core::fmt::Debug> From<CommandIndexError> for Sdi12Error<E> {
+// Map command index errors into the main error type (with default E=())
+// This resolves the E0119 conflict.
+impl From<CommandIndexError> for Sdi12Error<()> {
     fn from(e: CommandIndexError) -> Self {
         Sdi12Error::InvalidCommandIndex(e)
     }
 }
 
-// Map command format errors into the main error type
-impl<E: core::fmt::Debug> From<CommandFormatError> for Sdi12Error<E> {
+// Map command format errors into the main error type (with default E=())
+// This resolves the E0119 conflict.
+impl From<CommandFormatError> for Sdi12Error<()> {
     fn from(e: CommandFormatError) -> Self {
         Sdi12Error::CommandFormatFailed(e)
     }
