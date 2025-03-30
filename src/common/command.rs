@@ -8,6 +8,10 @@ use core::fmt;
 #[cfg(feature = "alloc")]
 use alloc::string::String;
 
+// Import alloc types needed specifically for tests when 'alloc' is enabled
+#[cfg(feature = "alloc")]
+use alloc::string::ToString; // *** ADD THIS LINE ***
+
 // --- Error Type for Index Validation ---
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

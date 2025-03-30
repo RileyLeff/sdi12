@@ -4,7 +4,7 @@
 use alloc::string::String;
 
 // No more cfg_attr needed here, thiserror is always available
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum Sdi12Error<E = ()>
 where
     E: core::fmt::Debug, // Still need Debug for the generic Io error
