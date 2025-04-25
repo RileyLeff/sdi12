@@ -115,6 +115,6 @@ The library uses the standard Rust crate structure (`src/lib.rs`) with the follo
 *   **Testing:** Add integration tests (simulated loopback, hardware loopback), hardware-in-the-loop tests with real sensors/recorders. Test edge cases and error conditions more thoroughly. Test async race conditions. Clean up test mock inconsistencies (e.g., `Clone` derive).
 *   **Buffer Sizes:** Review fixed buffer sizes (like `MAX_FORMATTED_LEN`) and consider making them configurable or using alternatives where appropriate.
 
-## 9. Conclusion
+## 9. The State Of Things
 
 The `sdi12-rs` library has made significant progress. The `common` module is robust, and the core synchronous recorder transaction logic (`execute_transaction` with its helpers) is now implemented, including timeout handling via the enhanced `Sdi12Timer` trait and basic retries. The flexible `send_command` public API method provides immediate utility for testing and interacting with sensors. The next steps involve building out the remaining specific public recorder methods, implementing the sensor side, providing HAL adapters, and creating examples for real-world usage.
